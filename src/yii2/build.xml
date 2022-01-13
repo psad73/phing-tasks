@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="yii">  
+    <!-- 
+        TASK
+        Yii2 cleanup
+    //-->
+    <tstamp>
+        <format property="TIMESTAMP" pattern="%Y%m%d-%H%M" locale="pl_PL"/>
+    </tstamp>
+    <target name="yii.cleanup">
+        <phingcall target="yii.cleanup.cache"></phingcall>
+        <phingcall target="yii.cleanup.debug"></phingcall>
+        <phingcall target="yii.cleanup.logs"></phingcall>
+    </target>
+    <!--
+        TASK
+        Cleanup cache folders
+    //-->
+    <target name="yii.cleanup.cache">
+        <delete includeemptydirs="true">
+            <fileset dir="backend/runtime/cache/">
+                <include name="**/*"/>
+            </fileset>
+            <fileset dir="frontend/runtime/cache/">
+                <include name="**/*"/>
+            </fileset>
+            <fileset dir="console/runtime/cache/">
+                <include name="**/*"/>
+            </fileset>
+        </delete>
+    </target>
+    <!--
+        TASK
+        Cleanup debug dirs
+    //-->
+    <target name="yii.cleanup.debug">
+        <delete includeemptydirs="true">
+            <fileset dir="backend/runtime/debug/">
+                <include name="*.data"/>
+            </fileset>
+        </delete>
+        <delete includeemptydirs="true">
+            <fileset dir="frontend/runtime/debug/">
+                <include name="*.data"/>
+            </fileset>
+        </delete>
+        <delete includeemptydirs="true">
+            <fileset dir="console/runtime/debug/">
+                <include name="*.data"/>
+            </fileset>
+        </delete>
+    </target>
+    <!--
+        TASK
+        Cleanup logs
+    //-->
+    <target name="yii.cleanup.logs">
+        <phingcall target="yii.int.rotatelogfile">
+            <property name="file" value="backend/runtime/logs/app"/>
+            <property name="suffix" value=".log"/>
+        </phingcall>
+        <phingcall target="yii.int.rotatelogfile">
+            <property name="file" value="frontend/runtime/logs/app"/>
+        </phingcall>
+        <phingcall target="yii.int.rotatelogfile">
+            <property name="file" value="console/runtime/logs/app"/>
+        </phingcall>
+    </target>
+    <!-- 
+        Internal task rotate log files
+    //-->
+    <target name="yii.int.rotatelogfile">       
+        <!-- check if suffix prop is set -->
+        <if>
+            <or>
+                <not>
+                    <isset property="suffix" />
+                </not>
+                <and>
+                    <isset property="suffix" />
+                    <equals arg1="${suffix}" arg2="" />
+                </and>
+            </or>
+            <then>
+                <property name="suffix" value=".log"/>
+            </then>
+            <else />
+        </if>
+        <!-- if log file exists, than rotate -->
+        <if>
+            <available file="${file}${suffix}" type="file" />
+            <then>
+                <move file="${file}${suffix}" tofile="${file}-${TIMESTAMP}${suffix}"/>
+            </then>
+            <else>
+                <echo msg="File ${file}${suffix} not present, skipping"/>
+            </else>
+        </if>
+    </target>
+</project>
+

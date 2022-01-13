@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="local" default="systeminfo" basedir=".">
+    <property name="phing.basepath" value="/data/www/projects/phing/src/" />
+    <import file="${phing.basepath}deploy/build.xml"/>
+    <import file="${phing.basepath}main/build.xml"/>
+    <import file="${phing.basepath}git/build.xml"/>
+    <import file="${phing.basepath}develop/build.xml"/>
+    <import file="${phing.basepath}wordphing/build.xml"/>
+     <import file="${phing.basepath}yii2/build.xml"/>
+</project>

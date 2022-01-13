@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="deploy">
+    <target name="deploy.all">
+        <phingcall target="deploy.source"/>
+        <phingcall target="deploy.composer-vendor"/>
+    </target>
+    <!-- 
+    
+        Deploy Source files 
+    
+    //-->
+    <target name="deploy.source">
+        <property name="unzipscriptname" value="unzip.php"/>
+        <tempfile property="temp.file" suffix=".zip"/>
+        <zip destfile="${temp.file}">
+            <fileset dir=".">
+                <include name="backend/"/>
+                <include name="common/"/>
+                <include name="frontend/"/>
+                <include name="console/"/>
+                <exclude name="**/*-local.php"/>
+                <exclude name="**/runtime/**"/>
+            </fileset>
+        </zip>    
+        <basename property="zip.filename" file="${temp.file}"/>               
+        <ftpdeploy 
+            host="${ftp.host}"
+            port="${ftp.port}"
+            username="${ftp.username}"
+            password="${ftp.password}"
+            dir="${ftp.destdir}"
+            passive="true">
+            <fileset dir=".">
+                <include name="${zip.filename}"/>
+            </fileset>
+        </ftpdeploy>
+        <phingcall target="deploy.http-request-unzip">
+            <property name="unzip-filename" value="${zip.filename}"/>
+        </phingcall>
+        <delete file="${temp.file}"/>
+    </target>
+    <!-- 
+    
+        Composer-Vendor 
+    
+    //-->
+    <target name="deploy.composer-vendor">
+        <property name="unzipscriptname" value="unzip.php"/>
+        <tempfile property="temp.file" suffix=".zip"/>
+        <zip destfile="${temp.file}">
+            <fileset dir=".">
+                <include name="vendor/"/>
+            </fileset>
+        </zip>
+        <filesize file="${temp.file}" propertyname="zip.size"/>
+        <echo msg="Compressed '${deploy.zip.source}' folder is ${zip.size} B big."/>
+        <basename property="zip.filename" file="${temp.file}"/>        
+        <echo msg="Deploying composer.json and composer.lock files."/>
+        <ftpdeploy 
+            host="${ftp.host}"
+            port="${ftp.port}"
+            username="${ftp.username}"
+            password="${ftp.password}"
+            dir="${ftp.destdir}"
+            passive="true">
+            <fileset dir=".">
+                <include name="composer.json"/>
+                <include name="composer.lock"/>  
+                <include name="${zip.filename}"/>                            
+            </fileset>
+        </ftpdeploy>
+        <echo msg="Deploying zipped '${deploy.zip.source}' folder."/>
+        <ftpdeploy 
+            host="${ftp.host}"
+            port="${ftp.port}"
+            username="${ftp.username}"
+            password="${ftp.password}"
+            dir="${deploy.unzip.scriptdestdir}"
+            passive="true">
+            <fileset dir="${phing.basepath}deploy/">
+                <include name="${unzipscriptname}"/>
+            </fileset>
+        </ftpdeploy>
+        <phingcall target="deploy.http-request-unzip">
+            <property name="unzip-filename" value="${zip.filename}"/>
+        </phingcall>
+        <delete file="${temp.file}"/>        
+    </target>
+    <!-- //-->
+    <target name="deploy.http-request-unzip">
+        <echo msg="Making HTTP request to ${deploy.unzip.request-url}${unzipscriptname}"/>
+        <if>
+            <or>
+                <not>
+                    <isset property="deploy.unzip.request-authmethod" />
+                </not>
+                <and>
+                    <isset property="deploy.unzip.request-authmethod" />
+                    <equals arg1="${deploy.unzip.request-authmethod}" arg2="" />
+                </and>
+            </or>
+            <then>
+                <!-- it is not set or empty -->
+                <!--property name="productionSameAsExpectedBranch" value="something" override="true" /-->
+                <http-request 
+                    method="POST" 
+                    verbose="false" 
+                    url="${deploy.unzip.request-url}${unzipscriptname}">
+                    <postparameter name="file" value="${zip.filename}"/>
+                    <postparameter name="loc" value="${deploy.unzip.archivelocation}"/>
+                    <postparameter name="dest" value="${deploy.unzip.destdir}"/>
+                </http-request>                
+            </then>
+            <else>
+                <http-request 
+                    authUser="${deploy.unzip-request-authuser}"
+                    authPassword="${deploy.unzip-request-authpassword}"
+                    authScheme="${deploy.unzip.request-authmethod}"
+                    method="POST" 
+                    verbose="false"
+                    responseRegex="/UnzipSuccess/"
+                    url="${deploy.unzip.request-url}${unzipscriptname}">
+                    <postparameter name="file" value="${unzip-filename}"/>
+                    <postparameter name="loc" value="${deploy.unzip.archivelocation}"/>
+                    <postparameter name="dest" value="${deploy.unzip.destdir}"/>
+                </http-request>
+            </else>
+        </if> 
+    </target>
+    <!-- 
+        Deploy unzip script 
+    //-->
+    <target name="deploy.deploy-unzip-script">
+        
+    </target>
+</project>
+

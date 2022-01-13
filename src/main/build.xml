@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="local" default="systeminfo" basedir=".">
+    <property name="phing.basepath" value="/data/www/projects/phing/src/" />
+    <property name="URI.base" value="./"/>
+    <resolvepath propertyName="URI.base" file="${URI.base}"/>
+    <!-- ============================================  -->
+    <!-- Target: systeminfo                            -->
+    <!-- ============================================  --> 
+    <target name="systeminfo">
+        <echo msg="System info"/>
+    </target>
+    <!-- ============================================  -->
+    <!-- Target: systemcleanup                         -->
+    <!-- ============================================  -->     
+    <target name="systemcleanup">
+        <echo msg="Cleaning up system"/>
+        <phingcall target="aptautoremove"/>
+        <phingcall target="clearthumbnails"/>
+        <phingcall target="cleanaptcache"/>
+    </target>    
+    <!-- ============================================  -->
+    <!-- Target: aptautoremove                         -->
+    <!-- ============================================  -->    
+    <target name="aptautoremove">
+        <echo msg="APT autoremove"/>
+        <exec command="sudo apt-get autoremove"/>
+    </target>
+    <!-- ============================================  -->
+    <!-- Target: clearthumbnails                       -->
+    <!-- ============================================  -->    
+    <target name="clearthumbnails">
+        <echo msg="Clear thumbnail cache"/>
+        <delete dir="/home/psad/.cache/tumbnails" includeemptydirs="true">
+            <fileset dir="/home/psad/.cache/thumbnails">
+                <include name="*"/>
+            </fileset>
+        </delete>
+    </target>
+    <!-- ============================================  -->
+    <!-- Target: cleanaptcache                       -->
+    <!-- ============================================  -->     
+    <target name="cleanaptcache">
+        <exec command="sudp apt-get clean"/>
+    </target>
+        <!-- ============================================  -->
+    <!-- Target: initphing                       -->
+    <!-- ============================================  --> 
+    <target name="initphing" description="Create default Phing build.xml file">
+        <copy file="${phing.basepath}template/build.properties" tofile="build.properties" overwrite="false" verbose="true" haltonerror="true"/>
+        <copy file="${phing.basepath}template/build.xml" tofile="build.xml" overwrite="false" verbose="true" haltonerror="true"/>
+    </target>
+    <!-- ============================================  -->
+    <!-- Target: initwp                      -->
+    <!-- ============================================  --> 
+    <target name="initwp" description="Create default build.xml for Wordpress">
+        <copy file="${phing.basepath}wordphing/build.properties" tofile="build.properties" overwrite="false" verbose="true" haltonerror="true"/>
+        <copy file="${phing.basepath}wordphing/build.xml" tofile="build.xml" overwrite="false" verbose="true" haltonerror="true"/>
+    </target>
+    <!-- ============================================  -->
+    <!-- Target: git patch file                         -->
+    <!-- ============================================  -->     
+    <target name="makegitpatch">
+		<property name="format" value="tar" />
+        <echo message="Making patch file ${firstTag}"/>
+        <if>            
+            <not><isset property="firstTag"/></not>
+            <then>
+                <echo message="There is no diff to be created" />
+            </then>
+		</if>
+		<if>
+			<not><isset property="lastTag"/></not>
+				<then>
+                <exec outputProperty="lastTag" command="git show --summary --oneline|awk '{print $1;}'"/>
+            </then>			
+		</if>
+		<exec outputProperty="filesHaveChanged" command="git diff --name-only ${firstTag}..${lastTag}"/>
+		<exec outputProperty="timeStamp" command="date +%Y%m%d-%H%M%S"/>
+        <!-- exec command="git diff -name-only ${startHash}..${endHash}" output="true"/> -->
+        <echo message="Files changed:"/>
+        <!-- echo message="${filesHaveChanged}"/-->
+        <echo message="${format}"/>
+        <if>
+			<equals arg1="${format}" arg2="tar"/>
+				<then>
+					<exec command="git diff --name-only ${firstTag}..${lastTag} |xargs tar czf patch_${timeStamp}_${firstTag}-${lastTag}.tar.gz"/>	
+				</then>
+		<elseif>
+			<equals arg1="${format}" arg2="zip"/>
+				<then>
+					<exec command="git diff --name-only ${firstTag}..${lastTag} |xargs zip patch_${timeStamp}_${firstTag}-${lastTag}.zip"/>	
+				</then>
+		</elseif>
+        </if>
+    </target>    
+    <adhoc-task name="getcwd"><![CDATA[
+      class GetcwdTask extends Task {
+          function main() {
+              print(getcwd());
+          }
+      }
+  ]]></adhoc-task>
+</project>

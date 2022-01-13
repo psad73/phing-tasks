@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="local" default="makethis" basedir=".">
+    <property name="phing.basepath" value="/data/www/projects/phing/src/" />
+    <!-- load properties -->
+    <property file="build.properties" />
+    <target name="make.this">
+        <echo msg="Default make task"/>
+    </target>
+    <import file="${phing.basepath}build.xml"/>
+</project>
